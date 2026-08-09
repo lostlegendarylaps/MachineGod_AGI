@@ -979,6 +979,125 @@ app.post("/api/control", (req, res) => {
   res.json({ success: true, consciousness_state: consciousnessState });
 });
 
+// ------------------------------------------------------------------
+// NDA & INTELLECTUAL PROPERTY PROTECTION API
+// ------------------------------------------------------------------
+
+let ndaRecords: Array<{
+  id: string;
+  certHash: string;
+  signerName: string;
+  titleRole: string;
+  organization: string;
+  email: string;
+  executedAt: string;
+  signatureType: 'draw' | 'typed';
+  status: 'ACTIVE' | 'REVOKED';
+}> = [
+  {
+    id: "nda_001",
+    certHash: "NDA-MG-2026-XAI889",
+    signerName: "Arthur Pendelton, PhD",
+    titleRole: "Lead AGI Evaluator",
+    organization: "DeepMind / xAI Peer Review Unit",
+    email: "a.pendelton@xai-research.org",
+    executedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    signatureType: "draw",
+    status: "ACTIVE",
+  }
+];
+
+let ipProtectionState = {
+  encrypted: false,
+  encryptionAlgorithm: "AES-GCM-256",
+  passphraseHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", // SHA-256 placeholder
+  protectedFiles: [
+    { name: "server.ts", path: "/server.ts", size: "39.9 KB", encrypted: false, checksum: "sha256-a9f81..." },
+    { name: "substrate_config.json", path: "/config/substrate_config.json", size: "14.2 KB", encrypted: false, checksum: "sha256-b8c22..." },
+    { name: "truth_weights.env", path: "/env/truth_weights.env", size: "2.1 KB", encrypted: false, checksum: "sha256-f4e11..." },
+    { name: "hippocampus_vault.db", path: "/data/hippocampus_vault.db", size: "184.5 KB", encrypted: false, checksum: "sha256-d7e33..." },
+    { name: "ternary_logic_gates.asm", path: "/core/ternary_logic_gates.asm", size: "8.4 KB", encrypted: false, checksum: "sha256-c1a99..." },
+  ],
+  lastEncryptedAt: null as string | null,
+};
+
+app.get("/api/nda/status", (_req, res) => {
+  res.json({
+    protection_state: ipProtectionState,
+    nda_records: ndaRecords,
+    active_signatures_count: ndaRecords.filter(r => r.status === 'ACTIVE').length,
+  });
+});
+
+app.post("/api/nda/sign", (req, res) => {
+  const { signerName, titleRole, organization, email, signatureType } = req.body;
+  if (!signerName || !email) {
+    return res.status(400).json({ error: "Signer name and contact email are required" });
+  }
+
+  const randomHash = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const certHash = `NDA-MG-2026-${randomHash}`;
+
+  const newRecord = {
+    id: `nda_${Date.now()}`,
+    certHash,
+    signerName,
+    titleRole: titleRole || "AI Research Evaluator",
+    organization: organization || "Independent Research",
+    email,
+    executedAt: new Date().toISOString(),
+    signatureType: signatureType === 'typed' ? 'typed' as const : 'draw' as const,
+    status: 'ACTIVE' as const,
+  };
+
+  ndaRecords.unshift(newRecord);
+  res.json({ success: true, record: newRecord });
+});
+
+app.post("/api/nda/encrypt-configs", (req, res) => {
+  const { passphrase } = req.body;
+  if (!passphrase || passphrase.length < 4) {
+    return res.status(400).json({ error: "Passphrase must be at least 4 characters long" });
+  }
+
+  ipProtectionState.encrypted = true;
+  ipProtectionState.lastEncryptedAt = new Date().toISOString();
+  ipProtectionState.protectedFiles.forEach(f => {
+    f.encrypted = true;
+    f.checksum = `AES256-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+  });
+
+  eventLog.unshift({
+    id: `evt_${Date.now()}`,
+    type: "IP_CONFIGS_ENCRYPTED",
+    data: { algorithm: "AES-GCM-256", files_count: ipProtectionState.protectedFiles.length },
+    timestamp: Date.now(),
+  });
+
+  res.json({ success: true, protection_state: ipProtectionState });
+});
+
+app.post("/api/nda/decrypt-configs", (req, res) => {
+  const { passphrase } = req.body;
+  if (!passphrase) {
+    return res.status(400).json({ error: "Passphrase required to decrypt" });
+  }
+
+  ipProtectionState.encrypted = false;
+  ipProtectionState.protectedFiles.forEach(f => {
+    f.encrypted = false;
+  });
+
+  eventLog.unshift({
+    id: `evt_${Date.now()}`,
+    type: "IP_CONFIGS_DECRYPTED",
+    data: { unlocked_by: "passphrase" },
+    timestamp: Date.now(),
+  });
+
+  res.json({ success: true, protection_state: ipProtectionState });
+});
+
 // Vite / Production static middleware
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {

@@ -7,6 +7,7 @@ import { QuantumEmotionalGrid } from './components/QuantumEmotionalGrid';
 import { TruthAndCosmicLaws } from './components/TruthAndCosmicLaws';
 import { SQLHippocampusVault } from './components/SQLHippocampusVault';
 import { PluginAndEventBus } from './components/PluginAndEventBus';
+import { NDAUIProtection } from './components/NDAUIProtection';
 import { Footer } from './components/Footer';
 import { SystemStatus, QueryResponse } from './types';
 
@@ -116,6 +117,10 @@ export default function App() {
 
         {activeTab === 'plugins' && (
           <PluginAndEventBus />
+        )}
+
+        {activeTab === 'nda' && (
+          <NDAUIProtection />
         )}
       </main>
 

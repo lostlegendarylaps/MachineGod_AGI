@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cpu, ShieldCheck, Zap, Activity, Layers, Database, Radio, Sparkles, Terminal } from 'lucide-react';
+import { Cpu, ShieldCheck, Zap, Activity, Layers, Database, Radio, Sparkles, Terminal, Lock } from 'lucide-react';
 import { SystemStatus } from '../types';
 
 interface HeaderProps {
@@ -26,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({ status, activeTab, setActiveTab 
     { id: 'truth', label: 'Truth & Cosmic Laws', icon: ShieldCheck },
     { id: 'hippocampus', label: 'SQL Hippocampus', icon: Database },
     { id: 'plugins', label: 'Plugins & Events', icon: Radio },
+    { id: 'nda', label: 'NDA & IP Protection', icon: Lock },
   ];
 
   return (
